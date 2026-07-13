@@ -152,7 +152,8 @@
                     container.appendChild(renderer.domElement);
 
                     const scene = new THREE.Scene(); scene.background = null;
-                    const perspCamera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.01, 50);
+                    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+                    const perspCamera = new THREE.PerspectiveCamera(isMobile ? 50 : 40, window.innerWidth / window.innerHeight, 0.01, 50);
                     perspCamera.position.set(1.6, 0.8, 1.6);
                     // cámara ortográfica para vistas axonométricas/ortográficas
                     const frustumSize = 2.6;
@@ -163,8 +164,8 @@
                     let activeCamera = perspCamera;
                     // Controles orbitales simples sin dependencia externa
                     const target = new THREE.Vector3(0, 0, 0);
-                    // distancia inicial mayor => menos zoom al recargar
-                    let distance = 4.0;
+                    // distancia inicial mayor => menos zoom al recargar, con un extra en móvil
+                    let distance = isMobile ? 8.5 : 4.0;
                     let isPointerDown = false;
                     let startX = 0, startY = 0, startLon = 0, startLat = 0;
                     let lon = -45, lat = 15;
