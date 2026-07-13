@@ -171,7 +171,7 @@
                     // Controles orbitales simples sin dependencia externa
                     const target = new THREE.Vector3(0, 0, 0);
                     // distancia inicial mayor => menos zoom al recargar, con un extra en móvil
-                    let distance = isMobile ? (isPortrait ? 10.0 : 10.0) : 4.0;
+                    let distance = isMobile ? 6.0 : 4.0;
                     const minDistance = isMobile ? 1.0 : 0.6;
                     const maxDistance = isMobile ? 24.0 : 6.0;
                     const zoomStep = isMobile ? 2.0 : 1.0;
@@ -199,7 +199,7 @@
                     }
 
                     updateCameraFromAngles();
-                    if (statusEl) statusEl.textContent = 'Arrastra para girar · Usa - y + para zoom';
+                    if (statusEl) statusEl.textContent = `Zoom: ${distance.toFixed(1)} · Arrastra para girar`;
 
                     renderer.domElement.style.touchAction = 'none';
                     renderer.domElement.addEventListener('pointerdown', (e) => { isPointerDown = true; startX = e.clientX; startY = e.clientY; startLon = lon; startLat = lat; renderer.domElement.setPointerCapture(e.pointerId); });
@@ -555,7 +555,7 @@
                         if (isMobile) {
                             perspCamera.fov = portrait ? 54 : 50;
                             perspCamera.updateProjectionMatrix();
-                            distance = portrait ? 12.0 : 8.5;
+                            distance = 6.0;
                             updateCameraFromAngles();
                         }
                     });
