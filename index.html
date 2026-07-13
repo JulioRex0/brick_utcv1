@@ -171,7 +171,7 @@
                     // Controles orbitales simples sin dependencia externa
                     const target = new THREE.Vector3(0, 0, 0);
                     // distancia inicial mayor => menos zoom al recargar, con un extra en móvil
-                    let distance = isMobile ? (isPortrait ? 16.0 : 10.0) : 4.0;
+                    let distance = isMobile ? (isPortrait ? 13.5 : 10.0) : 4.0;
                     const minDistance = isMobile ? 1.0 : 0.6;
                     const maxDistance = isMobile ? 24.0 : 6.0;
                     const zoomStep = isMobile ? 2.0 : 1.0;
@@ -438,7 +438,7 @@
 
                     const part = new THREE.Mesh(createInterlockingGeometry(), metalMat);
                     if (isMobile && isPortrait) {
-                        part.scale.setScalar(0.42);
+                        part.scale.setScalar(0.48);
                         part.position.y = -0.18;
                     } else {
                         part.position.y = -0.02;
