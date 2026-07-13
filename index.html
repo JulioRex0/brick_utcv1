@@ -32,18 +32,20 @@
 
         #container{width:100%;height:100%;display:block;overflow:hidden;background:transparent}
 
-        .ui{position:absolute;right:18px;top:18px;z-index:20;min-width:220px;max-width:320px;background:var(--ui-bg);-webkit-backdrop-filter:blur(6px) saturate(1.05);backdrop-filter:blur(6px) saturate(1.05);color:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:10px}
+        .ui{position:absolute;right:18px;top:18px;z-index:20;width:210px;min-width:210px;max-width:210px;background:var(--ui-bg);-webkit-backdrop-filter:blur(6px) saturate(1.05);backdrop-filter:blur(6px) saturate(1.05);color:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;display:flex;flex-direction:column;gap:8px}
         .ui .header-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 
         .ui .title{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
         .ui .subtitle{font-size:12px;color:var(--muted);margin-top:-4px}
 
         .controls{display:flex;gap:8px;flex-wrap:wrap}
+        .zoom-controls{display:flex;gap:8px;align-items:center}
         .btn{appearance:none;border:0;cursor:pointer;padding:8px 10px;border-radius:8px;font-weight:600;background:transparent;color:#fff;display:inline-flex;align-items:center;gap:8px}
         .btn svg{width:16px;height:16px;opacity:0.95}
         .btn-primary{background:linear-gradient(90deg,var(--accent),#c4570f);box-shadow:0 6px 14px rgba(255,122,89,0.18);color:#111}
         .btn-ghost{border:1px solid var(--glass-border);background:transparent}
         .btn:active{transform:translateY(1px)}
+        .zoom-btn{width:44px;height:38px;justify-content:center;padding:0;font-size:22px;line-height:1}
 
         .minimize-btn{width:30px;height:30px;justify-content:center;flex:0 0 auto;padding:0}
         .ui.is-collapsed{min-width:180px;max-width:180px;padding:10px}
@@ -58,7 +60,7 @@
         .footer{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
         .link{color:#fff;opacity:0.85;text-decoration:none}
 
-        @media(max-width:520px){.ui{left:10px;right:10px;top:auto;bottom:12px;flex-direction:row;align-items:center;gap:8px;padding:8px}}
+        @media(max-width:520px){.ui{left:auto;right:10px;top:auto;bottom:12px;width:180px;min-width:180px;max-width:180px;flex-direction:column;align-items:stretch;gap:8px;padding:8px}.ui .header-row{width:100%}.zoom-controls{justify-content:flex-start}}
     </style>
 </head>
 
@@ -73,8 +75,11 @@
             <div class="subtitle">Modelo 3D fotorrealista generado en el navegador</div>
             </div>
         </div>
-
-        <!-- Botones eliminados por petición: solo título y subtítulo permanecen -->
+        <div class="controls zoom-controls">
+            <button class="btn btn-ghost zoom-btn" id="zoomOut" type="button" aria-label="Alejar modelo">-</button>
+            <button class="btn btn-ghost zoom-btn" id="zoomIn" type="button" aria-label="Acercar modelo">+</button>
+        </div>
+        <div class="status" id="status">Arrastra para girar · Usa - y + para zoom</div>
     </div>
 
         <!-- Intento de cargar Three.js UMD (funciona desde file:// en la mayoría de navegadores) -->
@@ -154,7 +159,7 @@
                     const scene = new THREE.Scene(); scene.background = null;
                     const isMobile = window.matchMedia('(max-width: 768px)').matches;
                     const isPortrait = window.innerHeight > window.innerWidth;
-                    const perspCamera = new THREE.PerspectiveCamera(isMobile ? (isPortrait ? 54 : 50) : 40, window.innerWidth / window.innerHeight, 0.01, 50);
+                    const perspCamera = new THREE.PerspectiveCamera(isMobile ? (isPortrait ? 58 : 50) : 40, window.innerWidth / window.innerHeight, 0.01, 50);
                     perspCamera.position.set(1.6, 0.8, 1.6);
                     // cámara ortográfica para vistas axonométricas/ortográficas
                     const frustumSize = 2.6;
@@ -166,10 +171,19 @@
                     // Controles orbitales simples sin dependencia externa
                     const target = new THREE.Vector3(0, 0, 0);
                     // distancia inicial mayor => menos zoom al recargar, con un extra en móvil
-                    let distance = isMobile ? (isPortrait ? 12.0 : 8.5) : 4.0;
+                    let distance = isMobile ? (isPortrait ? 16.0 : 10.0) : 4.0;
+                    const minDistance = isMobile ? 1.0 : 0.6;
+                    const maxDistance = isMobile ? 24.0 : 6.0;
+                    const zoomStep = isMobile ? 2.0 : 1.0;
                     let isPointerDown = false;
                     let startX = 0, startY = 0, startLon = 0, startLat = 0;
                     let lon = -45, lat = 15;
+
+                    function setDistance(nextDistance) {
+                        distance = Math.max(minDistance, Math.min(maxDistance, nextDistance));
+                        updateCameraFromAngles();
+                        if (statusEl) statusEl.textContent = `Zoom: ${distance.toFixed(1)} · Arrastra para girar`;
+                    }
 
                     function updateCameraFromAngles() {
                         const phi = THREE.MathUtils.degToRad(90 - lat);
@@ -185,12 +199,18 @@
                     }
 
                     updateCameraFromAngles();
+                    if (statusEl) statusEl.textContent = 'Arrastra para girar · Usa - y + para zoom';
 
                     renderer.domElement.style.touchAction = 'none';
                     renderer.domElement.addEventListener('pointerdown', (e) => { isPointerDown = true; startX = e.clientX; startY = e.clientY; startLon = lon; startLat = lat; renderer.domElement.setPointerCapture(e.pointerId); });
                     renderer.domElement.addEventListener('pointermove', (e) => { if (!isPointerDown) return; const dx = e.clientX - startX, dy = e.clientY - startY; lon = startLon - dx * 0.25; lat = Math.max(-85, Math.min(85, startLat + dy * 0.25)); updateCameraFromAngles(); });
                     ['pointerup','pointercancel','pointerout','pointerleave'].forEach(ev=>renderer.domElement.addEventListener(ev, ()=>{ isPointerDown = false; }));
-                    renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); distance = Math.max(0.6, Math.min(6, distance + e.deltaY * 0.0025)); updateCameraFromAngles(); }, { passive: false });
+                    renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); setDistance(distance + e.deltaY * 0.004); }, { passive: false });
+
+                    const zoomOutBtn = document.getElementById('zoomOut');
+                    const zoomInBtn = document.getElementById('zoomIn');
+                    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => setDistance(distance + zoomStep));
+                    if (zoomInBtn) zoomInBtn.addEventListener('click', () => setDistance(distance - zoomStep));
 
                     scene.add(new THREE.AmbientLight(0xffffff, 0.25));
                     const key = new THREE.DirectionalLight(0xffffff, 1.2); key.position.set(2, 2, 1); scene.add(key);
@@ -417,9 +437,9 @@
                     });
 
                     const part = new THREE.Mesh(createInterlockingGeometry(), metalMat);
-                    if (isPortrait) {
-                        part.scale.setScalar(0.55);
-                        part.position.y = -0.12;
+                    if (isMobile && isPortrait) {
+                        part.scale.setScalar(0.42);
+                        part.position.y = -0.18;
                     } else {
                         part.position.y = -0.02;
                     }
